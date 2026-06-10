@@ -4,10 +4,10 @@ Clutch is a white-label coaching platform for gyms and trainers to create, revie
 
 The initial repository foundation is a TypeScript monorepo with:
 
-- `apps/mobile` - Expo/React Native client app for end users.
-- `apps/admin` - React/Vite web admin module for gyms, trainers, and coaches.
+- `apps/mobile` - React Native client app for end users.
+- `apps/admin` - React/Vite web portal prototype for Admin and Coach workflows.
 - `packages/shared` - shared Clutch domain models and planning helpers used by both apps.
-- `docs/product-brief.md` - product concept, workflow, data inputs, and roadmap notes.
+- `docs/product-brief.md` - requirements-derived product concept, workflow, data inputs, and roadmap notes.
 
 ## Core product concept
 
@@ -34,7 +34,7 @@ Run the admin app:
 npm run dev --workspace apps/admin
 ```
 
-Run the mobile app:
+Run the mobile Metro bundler:
 
 ```bash
 npm run start --workspace apps/mobile
@@ -47,7 +47,7 @@ npm run start --workspace apps/mobile
 
 ## Next steps
 
-1. Incorporate the uploaded concept file once available.
-2. Replace demo data with tenant, coach, client, and plan APIs.
-3. Add authentication and role-based access for owner, coach, trainer, and client roles.
-4. Connect production integrations for labs, genetic files, and wearable providers.
+1. Replace requirements-derived demo data with tenant, coach, client, plan, library, and tracking APIs.
+2. Add authentication and role-based access for Admin, Coach, Client, and Partner roles.
+3. Connect production integrations for payments, video consultations, push notifications, partner feeds, labs, genetic files, and wearable providers.
+4. Split the prototype portal into role-specific Admin and Coach portal routes.

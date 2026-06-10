@@ -2,14 +2,24 @@ import {
   buildPlanSnapshot,
   clutchTenant,
   demoClient,
+  demoDailyDashboard,
+  demoExerciseLibrary,
   type Recommendation
 } from "@clutch/shared";
 import { ScrollView, StatusBar, StyleSheet, Text, View } from "react-native";
 
 const plan = buildPlanSnapshot(demoClient);
+const firstWorkout = demoDailyDashboard.trainingPlan.workouts[0];
+const firstStep = firstWorkout?.steps[0];
+const firstExercise =
+  firstStep?.type === "exercise"
+    ? demoExerciseLibrary.find((exercise) => exercise.id === firstStep.exerciseId)
+    : undefined;
+const firstMeal = demoDailyDashboard.mealPlan.meals[0];
 
 export default function App() {
   const nextTouchpoint = plan.coachTouchpoints[0];
+  const nextMeeting = demoDailyDashboard.meetings[0];
 
   return (
     <View style={styles.root}>
@@ -17,12 +27,23 @@ export default function App() {
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.hero}>
           <Text style={styles.tenant}>{clutchTenant.name}</Text>
-          <Text style={styles.title}>Your coach-reviewed plan is ready.</Text>
+          <Text style={styles.title}>Today's plan is ready.</Text>
           <Text style={styles.subtitle}>
-            {demoClient.coachName} is using your intake, wearable trends,
-            genetics, and bloodwork to personalize this week.
+            {demoClient.coachName} has your workout, meals, lifestyle tasks,
+            tracking prompts, and check-in ready for {demoDailyDashboard.date}.
           </Text>
         </View>
+
+        {demoDailyDashboard.coachMessage ? (
+          <View style={styles.coachCard}>
+            <Text style={styles.overline}>Coach message</Text>
+            <Text style={styles.cardTitle}>{demoDailyDashboard.coachMessage.title}</Text>
+            <Text style={styles.bodyText}>{demoDailyDashboard.coachMessage.body}</Text>
+            <Text style={styles.pill}>
+              {demoDailyDashboard.coachMessage.channel} message available
+            </Text>
+          </View>
+        ) : null}
 
         <View style={styles.statusCard}>
           <View>
@@ -45,6 +66,85 @@ export default function App() {
           />
         </View>
 
+        {firstWorkout ? (
+          <View style={styles.planCard}>
+            <View style={styles.inlineHeader}>
+              <View>
+                <Text style={styles.overline}>Training plan</Text>
+                <Text style={styles.cardTitle}>{firstWorkout.name}</Text>
+              </View>
+              <Text style={styles.pill}>
+                {firstWorkout.lockedByCoach ? "Locked" : "Editable"}
+              </Text>
+            </View>
+            <Text style={styles.bodyText}>{firstWorkout.description}</Text>
+            <View style={styles.actionBox}>
+              <Text style={styles.actionTitle}>Workout execution</Text>
+              <Text style={styles.actionText}>
+                {firstWorkout.expectedDurationMinutes} minutes in the{" "}
+                {firstWorkout.timeOfDay}; {firstWorkout.steps.length} ordered
+                exercise/rest steps with play, pause, skip, and restart planned.
+              </Text>
+              {firstExercise ? (
+                <Text style={styles.actionText}>
+                  First exercise: {firstExercise.name} using{" "}
+                  {firstExercise.equipmentRequired.join(", ")}.
+                </Text>
+              ) : null}
+            </View>
+          </View>
+        ) : null}
+
+        {firstMeal ? (
+          <View style={styles.planCard}>
+            <Text style={styles.overline}>Meal plan</Text>
+            <Text style={styles.cardTitle}>{firstMeal.name}</Text>
+            <Text style={styles.bodyText}>{firstMeal.description}</Text>
+            <View style={styles.actionBox}>
+              <Text style={styles.actionTitle}>
+                {firstMeal.calories} calories / {firstMeal.proteinGrams}g protein
+              </Text>
+              <Text style={styles.actionText}>
+                {firstMeal.servings} serving, {firstMeal.preparationTimeMinutes}
+                min prep. Ingredients scale when servings change.
+              </Text>
+              <Text style={styles.actionText}>
+                Favorite: {firstMeal.isFavorite ? "yes" : "no"}; completed:{" "}
+                {firstMeal.completed ? "yes" : "no"}.
+              </Text>
+            </View>
+          </View>
+        ) : null}
+
+        <View style={styles.planCard}>
+          <Text style={styles.overline}>Lifestyle checklist</Text>
+          <Text style={styles.cardTitle}>Daily recommendations</Text>
+          {demoDailyDashboard.lifestylePlan.recommendations.map((recommendation) => (
+            <View key={recommendation.id} style={styles.checklistItem}>
+              <Text style={styles.checkMark}>
+                {recommendation.completedToday ? "Done" : "Open"}
+              </Text>
+              <Text style={styles.bodyText}>{recommendation.recommendation}</Text>
+            </View>
+          ))}
+        </View>
+
+        <View style={styles.planCard}>
+          <Text style={styles.overline}>Results tracking</Text>
+          <Text style={styles.cardTitle}>Today's prompts</Text>
+          {demoDailyDashboard.measurementPrompts.map((prompt) => (
+            <View key={prompt.id} style={styles.checklistItem}>
+              <Text style={prompt.overdue ? styles.overduePill : styles.pill}>
+                {prompt.overdue ? "Overdue" : prompt.interval.replaceAll("_", " ")}
+              </Text>
+              <Text style={styles.bodyText}>
+                {prompt.label}
+                {prompt.lastValue ? ` - last: ${prompt.lastValue}` : ""}
+              </Text>
+            </View>
+          ))}
+        </View>
+
         <PlanCard
           title="Nutrition focus"
           summary={`${plan.nutrition.calories}. ${plan.nutrition.mealTiming}`}
@@ -62,6 +162,17 @@ export default function App() {
             <Text style={styles.overline}>Next coach check-in</Text>
             <Text style={styles.cardTitle}>{nextTouchpoint.cadence}</Text>
             <Text style={styles.bodyText}>{nextTouchpoint.messagePrompt}</Text>
+          </View>
+        ) : null}
+
+        {nextMeeting ? (
+          <View style={styles.coachCard}>
+            <Text style={styles.overline}>Scheduled meeting</Text>
+            <Text style={styles.cardTitle}>{nextMeeting.title}</Text>
+            <Text style={styles.bodyText}>
+              {nextMeeting.format} consultation with a reminder{" "}
+              {nextMeeting.reminderMinutesBefore} minutes before start.
+            </Text>
           </View>
         ) : null}
 
@@ -263,6 +374,53 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     gap: 8,
     padding: 18
+  },
+  inlineHeader: {
+    alignItems: "flex-start",
+    flexDirection: "row",
+    gap: 10,
+    justifyContent: "space-between"
+  },
+  pill: {
+    alignSelf: "flex-start",
+    backgroundColor: "#dbeafe",
+    borderRadius: 999,
+    color: "#1d4ed8",
+    fontSize: 12,
+    fontWeight: "800",
+    overflow: "hidden",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    textTransform: "capitalize"
+  },
+  overduePill: {
+    alignSelf: "flex-start",
+    backgroundColor: "#fee2e2",
+    borderRadius: 999,
+    color: "#b91c1c",
+    fontSize: 12,
+    fontWeight: "800",
+    overflow: "hidden",
+    paddingHorizontal: 10,
+    paddingVertical: 5
+  },
+  checklistItem: {
+    backgroundColor: "#f8fafc",
+    borderRadius: 18,
+    gap: 8,
+    marginTop: 10,
+    padding: 12
+  },
+  checkMark: {
+    alignSelf: "flex-start",
+    backgroundColor: "#dcfce7",
+    borderRadius: 999,
+    color: "#166534",
+    fontSize: 12,
+    fontWeight: "800",
+    overflow: "hidden",
+    paddingHorizontal: 10,
+    paddingVertical: 5
   },
   safetyCard: {
     backgroundColor: "#fff7ed",

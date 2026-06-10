@@ -1,8 +1,17 @@
 import {
+  adminPortalCapabilities,
   buildPlanSnapshot,
+  coachPortalCapabilities,
   clutchTenant,
+  demoCoach,
   demoClient,
+  demoDailyDashboard,
+  demoExerciseLibrary,
+  demoMealLibrary,
+  partnerConnectors,
+  requirementAreas,
   type BiomarkerResult,
+  type PortalCapability,
   type Recommendation
 } from "@clutch/shared";
 
@@ -24,6 +33,21 @@ const sourceLabels = [
   {
     label: "Coach intake",
     detail: `${demoClient.intake.goals.length} goals + preferences`
+  },
+  {
+    label: "Daily dashboard",
+    detail: `${demoDailyDashboard.trainingPlan.workouts.length} workout + ${demoDailyDashboard.mealPlan.meals.length} meals`
+  }
+];
+
+const capabilityGroups = [
+  {
+    title: "Coach portal",
+    capabilities: coachPortalCapabilities
+  },
+  {
+    title: "Admin portal",
+    capabilities: adminPortalCapabilities
   }
 ];
 
@@ -40,7 +64,9 @@ export function App() {
         <nav>
           <a href="#overview">Overview</a>
           <a href="#clients">Clients</a>
+          <a href="#daily-dashboard">Daily dashboard</a>
           <a href="#plan-review">Plan review</a>
+          <a href="#portal-scope">Portal scope</a>
           <a href="#integrations">Integrations</a>
         </nav>
       </aside>
@@ -49,11 +75,11 @@ export function App() {
         <header className="hero" id="overview">
           <div>
             <p className="eyebrow">Coach-reviewed personalization</p>
-            <h2>Turn genetics, labs, wearables, and intake into a plan.</h2>
+            <h2>Operate daily training, nutrition, lifestyle, and coaching workflows.</h2>
             <p>
-              Clutch helps trainers create nutrition and workout guidance that
-              combines objective data with coach context before anything is
-              published to the client app.
+              Clutch combines white-label branding, plan creation, daily client
+              execution, result tracking, communications, and partner data feeds
+              across Admin, Coach, Client, and Partner roles.
             </p>
           </div>
           <div className="score-card">
@@ -63,7 +89,7 @@ export function App() {
           </div>
         </header>
 
-        <section className="grid four-column" aria-label="Connected sources">
+        <section className="grid five-column" aria-label="Connected sources">
           {sourceLabels.map((source) => (
             <article className="card" key={source.label}>
               <p className="eyebrow">{source.label}</p>
@@ -81,7 +107,11 @@ export function App() {
             <dl className="profile-list">
               <div>
                 <dt>Coach</dt>
-                <dd>{demoClient.coachName}</dd>
+                <dd>{demoCoach.name}</dd>
+              </div>
+              <div>
+                <dt>Gym</dt>
+                <dd>{demoCoach.gymName}</dd>
               </div>
               <div>
                 <dt>Goals</dt>
@@ -120,6 +150,64 @@ export function App() {
           </article>
         </section>
 
+        <section className="grid three-column" id="daily-dashboard">
+          <article className="panel">
+            <div className="section-heading">
+              <p className="eyebrow">Mobile app</p>
+              <h3>Daily dashboard</h3>
+            </div>
+            {demoDailyDashboard.coachMessage ? (
+              <p className="coach-note">{demoDailyDashboard.coachMessage.body}</p>
+            ) : null}
+            <ul className="compact-list">
+              <li>{demoDailyDashboard.trainingPlan.workouts.length} scheduled workout</li>
+              <li>{demoDailyDashboard.mealPlan.meals.length} planned meals</li>
+              <li>
+                {demoDailyDashboard.lifestylePlan.recommendations.length} lifestyle
+                recommendations
+              </li>
+              <li>{demoDailyDashboard.measurementPrompts.length} tracking prompts</li>
+            </ul>
+          </article>
+
+          <article className="panel">
+            <div className="section-heading">
+              <p className="eyebrow">Training plan</p>
+              <h3>{demoDailyDashboard.trainingPlan.workouts[0]?.name}</h3>
+            </div>
+            <p>
+              {demoDailyDashboard.trainingPlan.workouts[0]?.expectedDurationMinutes} min,
+              {demoDailyDashboard.trainingPlan.workouts[0]?.lockedByCoach
+                ? " locked by coach"
+                : " editable by client"}
+            </p>
+            <ul className="compact-list">
+              {demoDailyDashboard.trainingPlan.workouts[0]?.steps.map((step) => (
+                <li key={step.id}>
+                  {step.type === "exercise"
+                    ? `${step.expectedIntensity} exercise step`
+                    : `${step.durationSeconds}s rest`}
+                </li>
+              ))}
+            </ul>
+          </article>
+
+          <article className="panel">
+            <div className="section-heading">
+              <p className="eyebrow">Meal plan</p>
+              <h3>Serving-aware recipes</h3>
+            </div>
+            <ul className="compact-list">
+              {demoDailyDashboard.mealPlan.meals.map((meal) => (
+                <li key={meal.id}>
+                  {meal.name} - {meal.proteinGrams}g protein, {meal.servings} serving
+                </li>
+              ))}
+            </ul>
+            <p className="muted">{demoDailyDashboard.mealPlan.notes}</p>
+          </article>
+        </section>
+
         <section className="grid two-column" id="plan-review">
           <PlanColumn
             title="Nutrition plan"
@@ -131,6 +219,22 @@ export function App() {
             summary={`${plan.training.weeklyStructure} ${plan.training.recoveryGuidance}`}
             recommendations={plan.training.recommendations}
           />
+        </section>
+
+        <section className="grid two-column" id="portal-scope">
+          {capabilityGroups.map((group) => (
+            <article className="panel" key={group.title}>
+              <div className="section-heading">
+                <p className="eyebrow">Requirements scope</p>
+                <h3>{group.title}</h3>
+              </div>
+              <div className="capability-list">
+                {group.capabilities.map((capability) => (
+                  <Capability key={capability.id} capability={capability} />
+                ))}
+              </div>
+            </article>
+          ))}
         </section>
 
         <section className="grid two-column" id="integrations">
@@ -148,14 +252,24 @@ export function App() {
 
           <article className="panel">
             <div className="section-heading">
-              <p className="eyebrow">Coach communication</p>
-              <h3>Suggested touchpoints</h3>
+              <p className="eyebrow">Libraries and connectors</p>
+              <h3>Operational readiness</h3>
             </div>
             <ul className="touchpoint-list">
-              {plan.coachTouchpoints.map((touchpoint) => (
-                <li key={touchpoint.cadence}>
-                  <strong>{touchpoint.cadence}</strong>
-                  <span>{touchpoint.messagePrompt}</span>
+              <li>
+                <strong>Exercise library</strong>
+                <span>{demoExerciseLibrary.length} modeled exercises with tags and media</span>
+              </li>
+              <li>
+                <strong>Meal library</strong>
+                <span>{demoMealLibrary.length} modeled meals with ingredients and nutrition</span>
+              </li>
+              {partnerConnectors.map((connector) => (
+                <li key={connector.id}>
+                  <strong>{connector.name}</strong>
+                  <span>
+                    {connector.transferMode} transfer - {connector.status.replaceAll("_", " ")}
+                  </span>
                 </li>
               ))}
             </ul>
@@ -169,8 +283,36 @@ export function App() {
             </div>
           </article>
         </section>
+
+        <section className="panel">
+          <div className="section-heading">
+            <p className="eyebrow">Traceability</p>
+            <h3>Requirement areas represented in this foundation</h3>
+          </div>
+          <div className="requirement-grid">
+            {requirementAreas.map((area) => (
+              <article key={area.id}>
+                <strong>{area.title}</strong>
+                <span>{area.userExperience.replace("_", " ")}</span>
+                <p>{area.description}</p>
+              </article>
+            ))}
+          </div>
+        </section>
       </section>
     </main>
+  );
+}
+
+function Capability({ capability }: { capability: PortalCapability }) {
+  return (
+    <article className="capability">
+      <div>
+        <strong>{capability.title}</strong>
+        <span>{capability.status.replaceAll("_", " ")}</span>
+      </div>
+      <p>{capability.description}</p>
+    </article>
   );
 }
 
