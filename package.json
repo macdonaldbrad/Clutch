@@ -1,0 +1,20 @@
+{
+  "name": "clutch-platform",
+  "version": "0.1.0",
+  "private": true,
+  "description": "White-label nutrition and training platform for gyms, trainers, and their clients.",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.3"
+  }
+}
